@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 using namespace std;
 
 class Obserwator {
@@ -60,10 +61,14 @@ class Meteo : public Manager {
     private:
         double t { 0. };
         double losuj(int a, int b);
+        random_device rd;
 };
 
 double Meteo::losuj(int a, int b) {
-    return static_cast<double>( rand() % ( b - a + 1 ) + a );
+    // return static_cast<double>( rand() % ( b - a + 1 ) + a );
+    mt19937 gen(rd());
+    uniform_real_distribution<> dis(a,b);
+    return dis(gen);
 }
 
 void Meteo::operator()(size_t n) {
@@ -85,25 +90,41 @@ class TChwilowa : public Obserwator {
         const Meteo& ref;
 };
 
+class TSrednia : public Obserwator {
+    public:
+        TSrednia(const char* s, const Meteo& r) : Obserwator(s),ref{r} { }
+        void update() {
+            vec.push_back(ref.getT());
+            tsr = 0.;
+            for (const auto& d : vec) tsr += d;
+            tsr /= vec.size();
+            cout << "Obserwator " << id() << " t srednia = " << tsr << endl;
+        }
+    private:
+        double tsr { 0. };
+        vector<double> vec;
+        const Meteo& ref;
+};
+
 int main() {
-    
+    //srand(time(0));
     Meteo stacja;
     Obserwator *p1 = new TChwilowa("MONITOR 1",stacja);
     Obserwator *p2 = new TChwilowa("MONITOR 2",stacja);
-    //Obserwator *p3 = new TSrednia("MONITOR SREDNI 3",stacja);
-    //Obserwator *p4 = new TSrednia("MONITOR SREDNI 4",stacja);
+    Obserwator *p3 = new TSrednia("MONITOR SREDNI 3",stacja);
+    Obserwator *p4 = new TSrednia("MONITOR SREDNI 4",stacja);
     stacja.obserwatorzy(); // pusta lista
     stacja.dodaj(p1);
     stacja.dodaj(p2);
-    //stacja.dodaj(p3);
-    //stacja.dodaj(p4);
+    stacja.dodaj(p3);
+    stacja.dodaj(p4);
     stacja.obserwatorzy();
     stacja(2); // dwa losowania, wywolanie stacja.operator()(2)
     stacja.dodaj(p1);
-    //stacja.usun(p3);
+    stacja.usun(p3);
     stacja(2); // kolejne dwa losowania, juz bez p3
     delete p1;
     delete p2;
-    //delete p3;
-    //delete p4;
+    delete p3;
+    delete p4;
 }
