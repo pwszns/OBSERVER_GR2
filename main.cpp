@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <memory>
 using namespace std;
 
 class Obserwator {
@@ -20,12 +21,12 @@ class Obserwator {
 
 class Manager {
     public:
-        void dodaj(Obserwator* p);
-        void usun(Obserwator* p);
+        void dodaj(unique_ptr<Obserwator>& p);
+        void usun(unique_ptr<Obserwator>& p);
         void powiadom();
         void obserwatorzy() const;
     private:
-        list<Obserwator*> klient;
+        list<unique_ptr<Obserwator>> klient;
 };
 
 void Manager::obserwatorzy() const {
@@ -39,18 +40,21 @@ void Manager::obserwatorzy() const {
 }
 
 void Manager::powiadom() {
-    for (auto p : klient) p->update();
+    for (auto& p : klient) p->update();
 }
 
-void Manager::dodaj(Obserwator* p) {
+void Manager::dodaj(unique_ptr<Obserwator>& p) {
     if (find(klient.begin(),klient.end(),p) == klient.end()) {
-        klient.push_back(p); // dodanie na koniec listy
+        klient.push_back(move
+        
+        ./pro   
+        (p)); // dodanie na koniec listy
     } else {
         cout << "Obserwator " << p->id() << " juz jest na liscie \n";
     }
 }
 
-void Manager::usun(Obserwator* p) {
+void Manager::usun(unique_ptr<Obserwator>& p) {
     klient.erase(find(klient.begin(),klient.end(),p));
 }
 
@@ -109,10 +113,10 @@ class TSrednia : public Obserwator {
 int main() {
     //srand(time(0));
     Meteo stacja;
-    Obserwator *p1 = new TChwilowa("MONITOR 1",stacja);
-    Obserwator *p2 = new TChwilowa("MONITOR 2",stacja);
-    Obserwator *p3 = new TSrednia("MONITOR SREDNI 3",stacja);
-    Obserwator *p4 = new TSrednia("MONITOR SREDNI 4",stacja);
+    unique_ptr<Obserwator> p1(new TChwilowa("MONITOR 1",stacja));
+    unique_ptr<Obserwator> p2(new TChwilowa("MONITOR 2",stacja));
+    unique_ptr<Obserwator> p3(new TSrednia("MONITOR SREDNI 3",stacja));
+    unique_ptr<Obserwator> p4(new TSrednia("MONITOR SREDNI 4",stacja));
     stacja.obserwatorzy(); // pusta lista
     stacja.dodaj(p1);
     stacja.dodaj(p2);
@@ -123,8 +127,4 @@ int main() {
     stacja.dodaj(p1);
     stacja.usun(p3);
     stacja(2); // kolejne dwa losowania, juz bez p3
-    delete p1;
-    delete p2;
-    delete p3;
-    delete p4;
 }
